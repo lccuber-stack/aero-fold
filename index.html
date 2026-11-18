@@ -303,6 +303,34 @@
       box-shadow: 0 0 0 1px rgba(56, 189, 248, 0.4);
     }
 
+    .collapsible-drawer {
+      background: rgba(15, 23, 42, 0.48);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      border-radius: 16px;
+      overflow: hidden;
+    }
+
+    .drawer-header {
+      width: 100%;
+      background: transparent;
+      border: none;
+      color: #f8fafc;
+      padding: 0.65rem 0.85rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      cursor: pointer;
+      text-align: left;
+    }
+
+    .drawer-body {
+      padding: 0 0.75rem 0.75rem 0.75rem;
+    }
+
+    .drawer-body.collapsed {
+      display: none;
+    }
+
     .stat-bar-bg {
       height: 4px;
       width: 100%;
@@ -746,12 +774,27 @@
           </svg>
         </button>
 
+        <!-- New Game / Menu Button -->
+        <button type="button" class="icon-btn" id="btn-hud-new-game" title="New Game / Setup Menu">
+          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"></path>
+            <path d="M3 3v5h5"></path>
+          </svg>
+        </button>
+
         <!-- Course Radar Mini-Map -->
         <div class="minimap-card" id="minimap-card" title="Tap to toggle Course Survey View">
           <span class="minimap-tag">RADAR</span>
           <canvas id="minimap-canvas"></canvas>
         </div>
       </div>
+    </div>
+
+    <!-- Inline New Game Confirmation Pill -->
+    <div id="new-game-confirm-bar" class="glass-pill hidden" style="position:fixed; top:calc(4.4rem + var(--safe-top)); left:50%; transform:translateX(-50%); z-index:25; padding:0.45rem 0.85rem; display:flex; align-items:center; gap:0.65rem; pointer-events:auto;">
+      <span class="text-xs font-bold">Start a new game?</span>
+      <button type="button" id="btn-confirm-restart" class="btn-primary" style="padding:0.35rem 0.75rem; font-size:0.78rem; border-radius:999px;">Yes, Setup</button>
+      <button type="button" id="btn-cancel-restart" class="btn-secondary" style="padding:0.35rem 0.7rem; font-size:0.78rem; border-radius:999px;">Cancel</button>
     </div>
 
     <!-- Status Banner -->
@@ -780,7 +823,7 @@
         <div style="width: 1px; height: 18px; background: rgba(255,255,255,0.16);"></div>
         <div class="pitch-control">
           <span class="text-xs font-bold text-muted">PITCH</span>
-          <input type="range" id="pitch-slider" class="pitch-slider" min="2" max="42" value="16" />
+          <input type="range" id="pitch-slider" class="pitch-slider" min="-4" max="42" value="16" />
           <span id="hud-pitch-val" class="font-display font-bold text-xs text-sky" style="min-width: 28px;">16°</span>
         </div>
         <div style="width: 1px; height: 18px; background: rgba(255,255,255,0.16);"></div>
@@ -824,14 +867,10 @@
         </div>
       </div>
 
-      <p class="text-sm text-muted mt-2">
-        Fold your custom glider, read the shifting winds across four scenic nature seasons, and swipe forward to soar toward the pin.
-      </p>
-
       <!-- Course Length & Player Count -->
-      <div class="setup-options-grid mt-4">
+      <div class="setup-options-grid mt-3">
         <div>
-          <label class="text-xs font-bold text-muted" style="display: block; margin-bottom: 0.4rem;">COURSE LENGTH</label>
+          <label class="text-xs font-bold text-muted" style="display: block; margin-bottom: 0.35rem;">COURSE LENGTH</label>
           <div class="seg-group" style="grid-template-columns: 1fr 1fr;" id="holes-selector">
             <button type="button" class="seg-btn selected" data-holes="9">9 Holes</button>
             <button type="button" class="seg-btn" data-holes="18">18 Holes</button>
@@ -839,7 +878,7 @@
         </div>
 
         <div>
-          <label class="text-xs font-bold text-muted" style="display: block; margin-bottom: 0.4rem;">PLAYERS (PASS &amp; PLAY)</label>
+          <label class="text-xs font-bold text-muted" style="display: block; margin-bottom: 0.35rem;">PLAYERS (PASS &amp; PLAY)</label>
           <div class="seg-group" style="grid-template-columns: repeat(4, 1fr);" id="players-count-selector">
             <button type="button" class="seg-btn selected" data-count="1">1P</button>
             <button type="button" class="seg-btn" data-count="2">2P</button>
@@ -849,23 +888,33 @@
         </div>
       </div>
 
-      <!-- Paperplane Model Selection -->
-      <div class="mt-4">
-        <div class="flex-between" style="margin-bottom: 0.45rem;">
-          <label class="text-xs font-bold text-muted">SELECT PAPERPLANE DESIGN (<span id="editing-player-label" class="text-sky">PLAYER 1</span>)</label>
-          <span class="text-xs text-muted">Tap player row below to customize</span>
+      <!-- Collapsible Paperplane Model Selection Drawer -->
+      <div class="collapsible-drawer mt-3">
+        <button type="button" class="drawer-header" id="btn-toggle-plane-drawer">
+          <div>
+            <div class="text-xs font-bold text-muted">PAPERPLANE DESIGN (<span id="editing-player-label" class="text-sky">PLAYER 1</span>)</div>
+            <div class="font-display font-bold text-sm mt-1" id="selected-plane-summary">The Swallow • All-Around Balanced</div>
+          </div>
+          <div style="display:flex; align-items:center; gap:0.35rem; color:#38bdf8; font-size:0.75rem; font-weight:700;">
+            <span id="plane-drawer-toggle-text">Change</span>
+            <svg id="plane-drawer-chevron" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" style="transition: transform 0.2s ease;">
+              <polyline points="6 9 12 15 18 9"></polyline>
+            </svg>
+          </div>
+        </button>
+        <div class="drawer-body collapsed" id="plane-drawer-body">
+          <div class="plane-grid" id="plane-models-grid"></div>
         </div>
-        <div class="plane-grid" id="plane-models-grid"></div>
       </div>
 
       <!-- Players Roster (Names & Paper Colors) -->
-      <div class="mt-4">
-        <label class="text-xs font-bold text-muted" style="display: block; margin-bottom: 0.45rem;">FLIGHT ROSTER &amp; PAPER COLORS</label>
-        <div id="players-roster" style="display: flex; flex-direction: column; gap: 0.55rem;"></div>
+      <div class="mt-3">
+        <label class="text-xs font-bold text-muted" style="display: block; margin-bottom: 0.35rem;">FLIGHT ROSTER &amp; PAPER COLORS</label>
+        <div id="players-roster" style="display: flex; flex-direction: column; gap: 0.5rem;"></div>
       </div>
 
       <!-- Start Game CTA -->
-      <div class="mt-5">
+      <div class="mt-4">
         <button type="button" id="btn-start-game" class="btn-primary w-full">
           <span>Launch Round</span>
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
@@ -1317,7 +1366,12 @@
     function renderSetupUI() {
       const grid = document.getElementById('plane-models-grid');
       const activeSetupPlayer = state.players[state.selectedSetupPlayerIdx];
+      const activeModelObj = PLANE_MODELS.find(m => m.id === activeSetupPlayer.modelId);
       document.getElementById('editing-player-label').textContent = activeSetupPlayer.name.toUpperCase();
+      const summaryEl = document.getElementById('selected-plane-summary');
+      if (summaryEl && activeModelObj) {
+        summaryEl.textContent = `${activeModelObj.name} • ${activeModelObj.tag}`;
+      }
 
       grid.innerHTML = PLANE_MODELS.map(m => {
         const selected = activeSetupPlayer.modelId === m.id ? 'selected' : '';
@@ -1434,6 +1488,16 @@
       if (window.forceFetchLatestVersion) {
         window.forceFetchLatestVersion(true);
       }
+    });
+
+    document.getElementById('btn-toggle-plane-drawer').addEventListener('click', () => {
+      sound.playClick();
+      const body = document.getElementById('plane-drawer-body');
+      const chevron = document.getElementById('plane-drawer-chevron');
+      const txt = document.getElementById('plane-drawer-toggle-text');
+      const isCollapsed = body.classList.toggle('collapsed');
+      chevron.style.transform = isCollapsed ? 'rotate(0deg)' : 'rotate(180deg)';
+      txt.textContent = isCollapsed ? 'Change' : 'Done';
     });
 
     renderSetupUI();
@@ -2162,7 +2226,7 @@
       syncPrecisionModeForDistance(distToPin);
 
       state.aim.yaw = Math.atan2(-dx, -dz);
-      state.aim.pitchDeg = state.aim.precisionMode ? 12 : 16;
+      state.aim.pitchDeg = distToPin <= 14 ? 4 : (state.aim.precisionMode ? 11 : 16);
       state.aim.power = 0;
       state.aim.isDragging = false;
 
@@ -2213,10 +2277,15 @@
     // =========================================================================
     function computeInitialVelocity(player, yaw, pitchDeg, power) {
       const model = PLANE_MODELS.find(m => m.id === player.modelId);
+      const hole = state.holes[state.currentHoleIdx];
+      const distToPin = hole ? Math.hypot(hole.pinPos.x - player.lie.x, hole.pinPos.z - player.lie.z) : 100;
       const isPrec = state.aim.precisionMode;
-      const baseSpeed = isPrec
-        ? (6.5 + power * 18.5) * (0.85 + model.speedMult * 0.15)
-        : (14 + power * 36) * model.speedMult;
+      const isChip = isPrec && distToPin <= 15;
+      const baseSpeed = isChip
+        ? (2.4 + power * 10.5)
+        : isPrec
+          ? (5.2 + power * 17.5) * (0.88 + model.speedMult * 0.12)
+          : (14 + power * 36) * model.speedMult;
       const pitchRad = THREE.MathUtils.degToRad(pitchDeg);
       const horiz = Math.cos(pitchRad) * baseSpeed;
       const vy = Math.sin(pitchRad) * baseSpeed;
@@ -2588,10 +2657,34 @@
 
     document.getElementById('btn-new-course').addEventListener('click', () => {
       sound.playClick();
+      returnToSetupMenu();
+    });
+
+    function returnToSetupMenu() {
+      sound.stopFlightWind();
       state.phase = 'MENU';
+      state.aim.isDragging = false;
+      state.surveyMode = false;
+      document.getElementById('new-game-confirm-bar').classList.add('hidden');
       document.getElementById('scorecard-screen').classList.add('hidden');
       document.getElementById('hud').classList.add('hidden');
       document.getElementById('setup-screen').classList.remove('hidden');
+    }
+
+    document.getElementById('btn-hud-new-game').addEventListener('click', () => {
+      sound.playClick();
+      const bar = document.getElementById('new-game-confirm-bar');
+      bar.classList.toggle('hidden');
+    });
+
+    document.getElementById('btn-confirm-restart').addEventListener('click', () => {
+      sound.playClick();
+      returnToSetupMenu();
+    });
+
+    document.getElementById('btn-cancel-restart').addEventListener('click', () => {
+      sound.playClick();
+      document.getElementById('new-game-confirm-bar').classList.add('hidden');
     });
 
     function toggleSurveyCamera() {
@@ -2804,6 +2897,7 @@
       state.phase = 'LANDED_WAIT';
 
       const distToPin = Math.hypot(landPos.x - hole.pinPos.x, landPos.z - hole.pinPos.z);
+      const gimmeRadius = 3.8;
 
       if (reason === 'WATER') {
         sound.playLanding(true);
@@ -2833,6 +2927,19 @@
         activePlaneMesh.position.copy(player.lie);
         const label = formatGolfScoreLabel(player.strokes, hole.par);
         showBanner(`${player.name}: ${label} (${player.strokes})`, 2600);
+        setTimeout(advanceTurnOrHole, 2100);
+        return;
+      }
+
+      if (distToPin <= gimmeRadius) {
+        sound.playHoleChime();
+        player.strokes++;
+        player.holed = true;
+        player.scores[state.currentHoleIdx] = player.strokes;
+        player.lie.set(hole.pinPos.x, hole.pinPos.y + 0.15, hole.pinPos.z);
+        activePlaneMesh.position.copy(player.lie);
+        const label = formatGolfScoreLabel(player.strokes, hole.par);
+        showBanner(`${player.name}: Tap-In Gimme! ${label} (${player.strokes})`, 2600);
         setTimeout(advanceTurnOrHole, 2100);
         return;
       }
